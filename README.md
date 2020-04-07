@@ -541,6 +541,44 @@ for data in dataloader:
 
 We discussed a simple strategy to avoid duplicated entries problem. [tfrecord](https://github.com/vahidk/tfrecord) package uses slightly more sophisticated strategies to shard your data on the fly.
 
+## Optimizing runtime with TorchScript
+<a name="torchscript"></a>
+PyTorch is optimized to perform operations on large tensors. Doing many operations on small tensors is quite inefficient in PyTorch. So, whenever possible you should rewrite your computations in batch form to reduce overhead and improve performance. If there's no way you can manually batch your operations, using TorchScript may improve your code's performance. TorchScript is simply a subset of Python functions that are recognized by PyTorch. PyTorch can automatically optimize your TorchScript code using its just in time (jit) compiler and reduce some overheads.
+
+Let's look at an example. A very common operation in ML applications is "batch gather". This operation can simply written as output[i] = input[i, index[i]]. This can be simply implemented in PyTorch as follows:
+```python
+import torch
+def batch_gather(tensor, indices):
+    output = []
+    for i in range(tensor.size(0)):
+        output += [tensor[i][indices[i]]]
+    return torch.stack(output)
+```
+
+To implement the same function using TorchScript simply use the torch.jit.script decorator:
+```python
+@torch.jit.script
+def batch_gather_jit(tensor, indices):
+    output = []
+    for i in range(tensor.size(0)):
+        output += [tensor[i][indices[i]]]
+    return torch.stack(output)
+```
+On my tests this is about 10% faster.
+
+But nothing beats manually batching your operations. A vectorized implementation in my tests is 100 times faster:
+```python
+def batch_gather_vec(tensor, indices):
+    shape = list(tensor.shape)
+    flat_first = torch.reshape(
+        tensor, [shape[0] * shape[1]] + shape[2:])
+    offset = torch.reshape(
+        torch.arange(shape[0]).cuda() * shape[1],
+        [shape[0]] + [1] * (len(indices.shape) - 1))
+    output = flat_first[indices + offset]
+    return output
+```
+
 ## Numerical stability in PyTorch
 <a name="stable"></a>
 When using any numerical computation library such as NumPy or PyTorch, it's important to note that writing mathematically correct code doesn't necessarily lead to correct results. You also need to make sure that the computations are stable.
