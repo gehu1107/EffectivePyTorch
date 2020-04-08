@@ -691,7 +691,7 @@ def batch_gather(tensor, indices):
     return torch.stack(output)
 ```
 
-To implement the same function using TorchScript simply use the torch.jit.script decorator:
+To implement the same function using TorchScript simply use the `torch.jit.script` decorator:
 ```python
 @torch.jit.script
 def batch_gather_jit(tensor, indices):
@@ -718,9 +718,9 @@ def batch_gather_vec(tensor, indices):
 ## Building efficient custom data loaders
 <a name="dataloader"></a>
 
-In the last lesson we talked about writing efficient PyTorch code. But to make your code run with maximum efficiency you also need to load your data efficiently into your device's memory. Fortunately PyTorch offers a tool to make data loading easy. It's called a _DataLoader_. A _DataLoader_ uses multiple workers to simultanously load data from a _Dataset_ and optionally uses a _Sampler_ to sample data entries and form a batch.
+In the last lesson we talked about writing efficient PyTorch code. But to make your code run with maximum efficiency you also need to load your data efficiently into your device's memory. Fortunately PyTorch offers a tool to make data loading easy. It's called a `DataLoader`. A `DataLoader` uses multiple workers to simultanously load data from a `Dataset` and optionally uses a `Sampler` to sample data entries and form a batch.
 
-If you can randomly access your data, using a _DataLoader_ is very easy: You simply need to implement a _Dataset_ class that implements _\_\_getitem\_\__ (to read each data item) and _\_\_len\_\__ (to return the number of items in the dataset) methods. For example here's how to load images from a given directory:
+If you can randomly access your data, using a `DataLoader` is very easy: You simply need to implement a `Dataset` class that implements `__getitem__` (to read each data item) and `__len__` (to return the number of items in the dataset) methods. For example here's how to load images from a given directory:
 
 ```python
 import glob
@@ -750,9 +750,9 @@ for data in dataloader:
 
 Here we are using 8 workers to simultanously read our data from the disk. You can tune the number of workers on your machine for optimal results.
 
-Using a _DataLoader_ to read data with random access may be ok if you have fast storage or if your data items are large. But imagine having a network file system with slow connection. Requesting individual files this way can be extremely slow and would probably end up becoming the bottleneck of your training pipeline.
+Using a `DataLoader` to read data with random access may be ok if you have fast storage or if your data items are large. But imagine having a network file system with slow connection. Requesting individual files this way can be extremely slow and would probably end up becoming the bottleneck of your training pipeline.
 
-A better approach is to store your data in a contiguous file format which can be read sequentially. For example if you have a large collection of images you can use tar to create a single archive and extract files from the archive sequentially in python. To do this you can use PyTorch's _IterableDataset_. To create an _IterableDataset_ class you only need to implement an _\_\_iter\_\__ method which sequentially reads and yields data items from the dataset.
+A better approach is to store your data in a contiguous file format which can be read sequentially. For example if you have a large collection of images you can use tar to create a single archive and extract files from the archive sequentially in python. To do this you can use PyTorch's `IterableDataset`. To create an `IterableDataset` class you only need to implement an `__iter__` method which sequentially reads and yields data items from the dataset.
 
 A naive implementation would like this:
 
@@ -787,7 +787,7 @@ for data in dataloader:
     # data contains duplicated items
 ```
 
-The problem is that each worker creates a separate instance of the dataset and each would start from the beginning of the dataset. One way to avoid this is to instead of having one tar file, split your data into num_workers separate tar files and load each with a separate worker:
+The problem is that each worker creates a separate instance of the dataset and each would start from the beginning of the dataset. One way to avoid this is to instead of having one tar file, split your data into `num_workers` separate tar files and load each with a separate worker:
 
 ```python
 class TarImageDataset(torch.utils.data.IterableDataset):
