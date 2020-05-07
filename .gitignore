@@ -4,4 +4,6 @@ data
 __pycache__
 .vscode
 datasets
+
 tmps
+*.swp
